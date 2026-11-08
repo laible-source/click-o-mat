@@ -1,4 +1,5 @@
 import { chromium } from 'playwright';
+import { clickPicker } from './picker.mjs';
 
 // "Folge dem Bass" — the adventure next to the demo: the title-screen game
 // picker, the German UI, the start inventory (the two-euro coin), the toilet
@@ -32,12 +33,12 @@ const click = (x, y, opts = {}) => page.mouse.click(gx(x), gy(y), opts);
 const ev = (fn, arg) => page.evaluate(fn, arg);
 
 // --- title: picker + German menu
-check('launcher lists game and demo', await ev(() => window.__engine.launcher?.games.map((g) => g.id).join(',') === 'goa,demo'));
+check('launcher lists game, demo and UNI', await ev(() => window.__engine.launcher?.games.map((g) => g.id).join(',') === 'goa,demo,uni'));
 check('the adventure is the current game', await ev(() => window.__engine.launcher.current === 'goa'));
 check('UI strings are German', await ev(() => window.__engine.strings.verbs.lookat === 'Schau an' && window.__engine.strings.newGame.includes('NEUES SPIEL')));
 await page.screenshot({ path: `${SHOT}/goa-01-title.png` });
 // Clicking the already-selected entry neither reloads nor starts the game.
-await click(420, 62);
+await clickPicker(page, 'goa');
 await page.waitForTimeout(600);
 check('clicking the current game keeps the title up', await ev(() => !window.__engine.roomScene));
 
@@ -243,7 +244,7 @@ await page.screenshot({ path: `${SHOT}/goa-05-end.png` });
 // --- the picker switches to the demo (reload with ?game=demo)
 await page.goto(withGame('goa'));
 await page.waitForTimeout(3000);
-await Promise.all([page.waitForURL(/game=demo/), click(557, 62)]);
+await Promise.all([page.waitForURL(/game=demo/), clickPicker(page, 'demo')]);
 await page.waitForTimeout(3000);
 check('picking DEMO loads the demo', await ev(() => window.__engine.launcher.current === 'demo' && window.__engine.startRoom === 'lab'));
 check('the demo keeps its English UI', await ev(() => window.__engine.strings.verbs.lookat === 'Look at'));

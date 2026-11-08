@@ -17,8 +17,10 @@ sources), the whole thing is code.
 Next to the demo lives the start of an actual adventure, **„Folge dem Bass“**
 (German, `src/goa/`): you begin in the **Picasso**, Ali's basement bar, with nothing but a
 two-euro coin and need the password for tonight's Goa party in the forest. The
-**title screen picks between the two** (SPIEL · DEMO); `?game=goa` /
-`?game=demo` select one directly, and the last pick is remembered.
+The **title screen picks between three games** (SPIEL · DEMO · UNI);
+`?game=goa`, `?game=demo`, and `?game=uni` select one directly, and the last
+pick is remembered. UNI currently opens a university cafeteria: click the
+floor to walk the student around.
 
 ### ▶ [Play the demo in your browser](https://timosachsenberg.github.io/click-o-mat/)
 
@@ -469,6 +471,8 @@ src/
     art/cast.ts        Player, Ali, the Partykiller (on the demo's puppet rig)
     art/props.ts       The bar's props (columns, slot machines, DJ booth, …)
     rooms/picasso.ts   The Picasso, Ali's basement bar
+  uni/                 UNI: a walkable university cafeteria and student
+    index.ts           Game content and cafeteria room
 public/
   img/                 PNG assets (served verbatim, copied into dist/)
 tools/

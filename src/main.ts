@@ -9,11 +9,11 @@ import { GAME_W, GAME_H } from './engine/constants';
 import { chooseRendererType, installCanvasTextureUploadFix } from './engine/renderCompat';
 import { CONTENT as DEMO } from './game';
 import { CONTENT as GOA } from './goa';
+import { CONTENT as UNI } from './uni';
 
-// Two games ship in one page: the adventure ("Folge dem Bass") and the
-// engine demo. The title screen picks between them; a pick reloads the page
-// with ?game=<id> and is remembered for the next visit.
-const GAMES = { goa: GOA, demo: DEMO };
+// The title screen picks a game; a pick reloads the page with ?game=<id>
+// and is remembered for the next visit.
+const GAMES = { goa: GOA, demo: DEMO, uni: UNI };
 type GameId = keyof typeof GAMES;
 const GAME_KEY = 'click-o-mat-game';
 const isGame = (id: string | null): id is GameId => !!id && Object.hasOwn(GAMES, id);
@@ -37,6 +37,7 @@ engine.launcher = {
   games: [
     { id: 'goa', label: 'SPIEL' },
     { id: 'demo', label: 'DEMO' },
+    { id: 'uni', label: 'UNI' },
   ],
   select: (id) => {
     const url = new URL(location.href);
