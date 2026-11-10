@@ -49,8 +49,9 @@ check('cafeteria displays the supplied image', await page.evaluate(() => {
   const scene = window.__engine.roomScene;
   const background = scene.layerObj('background');
   const image = scene.textures.get('uni-cafeteria').getSourceImage();
-  return background.texture.key === 'uni-cafeteria' && image.width === 640 && image.height === 360 &&
-    background.displayWidth === 960 && background.displayHeight === 450;
+  return background.texture.key === 'uni-cafeteria' && image.width === 640 && image.height === 427 &&
+    background.x === 0 && background.y === -95 &&
+    background.displayWidth === 960 && background.displayHeight === 640;
 }));
 check('student starts in the cafeteria', await page.evaluate(() =>
   window.__engine.state.activeChar === 'student' && window.__engine.roomScene.actors.size === 1));
