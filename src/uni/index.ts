@@ -49,7 +49,7 @@ export const CONTENT: GameContent = {
   rooms: { cafeteria },
   items: {},
   actors: {
-    student: { id: 'student', name: 'Student', talkColor: '#f5e1b5', textureSet: 'uni-student', speed: 240 },
+    student: { id: 'student', name: 'Student', talkColor: '#f5e1b5', textureSet: 'uni-student', baseScale: 1.8, speed: 240 },
   },
   dialogs: {},
   assets: {
