@@ -1,8 +1,10 @@
 import type { GameContent } from '../engine/Engine';
-import { Layer, type RoomDef } from '../engine/types';
+import { Layer, type HotspotDef, type LayerDef, type RoomDef } from '../engine/types';
 import { humanDraw, POSES, type HumanLook } from '../game/art/characters';
-import { path } from '../game/art/toon';
+import { group, path } from '../game/art/toon';
 import { UI_IMAGES, UI_THEME } from '../game/art/ui';
+import { cafeSet, cafeSetBounds, cafeSetRects } from './furniture';
+import { DE_STRINGS } from './strings';
 import '@fontsource/fredoka/500.css';
 import '@fontsource/fredoka/700.css';
 
@@ -26,11 +28,37 @@ const STUDENT: HumanLook = {
   },
 };
 
+const SCALING = { yTop: 315, scaleTop: 0.55, yBottom: 445, scaleBottom: 0.85 };
+const scaleAt = (y: number) => SCALING.scaleTop + ((SCALING.scaleBottom - SCALING.scaleTop) * (y - SCALING.yTop)) / (SCALING.yBottom - SCALING.yTop);
+
+// Furniture is sized against the student (about 1.75 m tall on screen).
+const STUDENT_PX = 120 * 1.8;
+const pxPerCm = (y: number) => (STUDENT_PX * scaleAt(y)) / 175;
+
+const TABLE_SPOTS = [
+  { cx: 240, floor: 385 },
+  { cx: 700, floor: 425 },
+].map((t) => {
+  const k = pxPerCm(t.floor);
+  return { ...t, k, b: cafeSetBounds(t.cx, t.floor, k) };
+});
+
 const cafeteria: RoomDef = {
   id: 'cafeteria',
   name: 'Cafeteria',
   assets: { images: [{ key: 'uni-cafeteria', url: `${import.meta.env.BASE_URL}img/uni-cafeteria.png` }] },
-  layers: [{ id: 'background', depth: Layer.BEHIND, image: 'uni-cafeteria', x: 0, y: -95, w: 960, h: 640 }],
+  layers: [
+    { id: 'background', depth: Layer.BEHIND, image: 'uni-cafeteria', x: 0, y: -95, w: 960, h: 640 },
+    ...TABLE_SPOTS.map(({ cx, floor, k, b }, i): LayerDef => ({
+      id: `table${i + 1}`,
+      depth: floor,
+      x: b.x,
+      y: b.y,
+      w: b.w,
+      h: b.h,
+      svg: group(cafeSet(cx, floor, k), `translate(${-b.x} ${-b.y})`),
+    })),
+  ],
   walkArea: [
     { x: 0, y: 450 },
     { x: 0, y: 395 },
@@ -39,8 +67,43 @@ const cafeteria: RoomDef = {
     { x: 960, y: 385 },
     { x: 960, y: 450 },
   ],
-  scaling: { yTop: 315, scaleTop: 0.55, yBottom: 445, scaleBottom: 0.85 },
-  hotspots: [],
+  holes: TABLE_SPOTS.map(({ b: { hole } }) => [
+    { x: hole.x0, y: hole.y0 },
+    { x: hole.x1, y: hole.y0 },
+    { x: hole.x1, y: hole.y1 },
+    { x: hole.x0, y: hole.y1 },
+  ]),
+  scaling: SCALING,
+  hotspots: TABLE_SPOTS.flatMap(({ cx, floor, k }, i) => {
+    const r = cafeSetRects(cx, floor, k);
+    const n = i + 1;
+    const chair = (id: string, side: 'chairLeft' | 'chairRight', facing: 'left' | 'right'): HotspotDef => ({
+      id,
+      name: 'Stuhl',
+      rect: r[side].rect,
+      walkTo: r[side].walkTo,
+      facing,
+      on: {
+        lookat: 'Ein Holzstuhl mit Stahlgestell. Sieht unbequem aus. Ist es wahrscheinlich auch.',
+        push: 'Ich sollte die Möbel stehen lassen, wo sie sind.',
+      },
+    });
+    return [
+      {
+        id: `table${n}`,
+        name: 'Tisch',
+        rect: r.table.rect,
+        walkTo: r.table.walkTo,
+        facing: 'up',
+        on: {
+          lookat: 'Ein Holztisch mit Stahlbeinen. Zwei Stühle, einer auf jeder Seite. Gut zum Lernen. Oder Essen.',
+          push: 'Der Tisch ist stabil. Er bleibt, wo er ist.',
+        },
+      } satisfies HotspotDef,
+      chair(`chair${n}a`, 'chairLeft', 'right'),
+      chair(`chair${n}b`, 'chairRight', 'left'),
+    ];
+  }),
   entries: { start: { x: 470, y: 375, facing: 'down' } },
 };
 
@@ -57,6 +120,7 @@ export const CONTENT: GameContent = {
     svgImages: UI_IMAGES,
   },
   theme: UI_THEME,
+  strings: DE_STRINGS,
   playerId: 'student',
   startRoom: 'cafeteria',
   startEntry: 'start',
