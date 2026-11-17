@@ -13,7 +13,8 @@ const SHIFT_Y = -270;
 const S = (x: number, y: number): Vec2 => ({ x: Math.round(x * K), y: Math.round(y * K + SHIFT_Y) });
 
 const SCALING = { yTop: 277, scaleTop: 0.5, yBottom: 450, scaleBottom: 0.85 };
-const PROFESSOR_POSITION = S(570, 690);
+const PROFESSOR_POSITION = S(740, 725);
+const PROFESSOR_FACING = 'left';
 const EXIT_TOP_LEFT = S(620, 300);
 const EXIT_BOTTOM_RIGHT = S(670, 360);
 
@@ -58,15 +59,15 @@ export const lectureHall: RoomDef = {
     S(170, 620),
   ],
   scaling: SCALING,
-  actors: [{ id: 'otto-e', ...PROFESSOR_POSITION, facing: 'down' }],
+  actors: [{ id: 'otto-e', ...PROFESSOR_POSITION, facing: PROFESSOR_FACING }],
   hotspots: [
     exit,
     {
       id: 'otto-e',
       name: 'Otto E.',
       actor: 'otto-e',
-      walkTo: S(635, 730),
-      facing: 'up',
+      walkTo: S(670, 750),
+      facing: 'right',
       defaultVerb: 'talkto',
       on: {
         lookat: 'Das ist Professor Otto E.',
@@ -75,5 +76,5 @@ export const lectureHall: RoomDef = {
     },
   ],
   entries: { passage: { ...S(205, 610), facing: 'right' } },
-  onWalkStart: async (ctx) => { ctx.face('otto-e', 'down'); },
+  onWalkStart: async (ctx) => { ctx.face('otto-e', PROFESSOR_FACING); },
 };

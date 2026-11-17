@@ -144,9 +144,9 @@ const professor = await page.evaluate(() => {
   const actor = window.__engine.roomScene.actors.get('otto-e');
   if (!actor) return null;
   const bounds = actor.sprite.getBounds();
-  return { x: bounds.centerX, y: bounds.centerY };
+  return { x: bounds.centerX, y: bounds.centerY, facing: actor.facing };
 });
-check('Otto E. is in the lecture hall', !!professor);
+check('Otto E. stands on the right, facing left', !!professor && professor.x > 650 && professor.facing === 'left');
 if (professor) {
   const box = await page.locator('canvas').boundingBox();
   await page.mouse.move(box.x + professor.x / 960 * box.width, box.y + professor.y / 600 * box.height);
@@ -157,8 +157,8 @@ if (professor) {
   check('Otto E. greets the player', true);
   await page.waitForFunction(() => !window.__engine.busy, null, { timeout: 15000 });
   await click(700, 430);
-  await page.waitForFunction(() => window.__engine.roomScene.actors.get('otto-e').facing === 'down' && !window.__engine.busy, null, { timeout: 15000 });
-  check('Otto E. faces forward again when the player leaves', true);
+  await page.waitForFunction(() => window.__engine.roomScene.actors.get('otto-e').facing === 'left' && !window.__engine.busy, null, { timeout: 15000 });
+  check('Otto E. faces left again when the player leaves', true);
 }
 await page.screenshot({ path: `${SHOT}/uni-lecture-hall.png` });
 await click(605, 40);
