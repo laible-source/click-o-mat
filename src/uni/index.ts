@@ -2,7 +2,7 @@ import type { GameContent } from '../engine/Engine';
 import type { ScriptContext } from '../engine/ScriptContext';
 import { Layer, type HotspotDef, type RoomDef } from '../engine/types';
 import { UI_IMAGES, UI_THEME } from '../game/art/ui';
-import { cafeSetHole, cafeSetLayers, cafeSetRects, cafeTableObjects } from './furniture';
+import { cafeSetHole, cafeSetLayers, cafeSetRects, cafeStudyObjects, cafeTableObjects } from './furniture';
 import { lectureHall } from './lecturehall';
 import { DE_STRINGS } from './strings';
 import { STUDENT_POSES, studentDraw } from './student';
@@ -67,6 +67,7 @@ const cafeteria: RoomDef = {
   layers: [
     { id: 'background', depth: Layer.BEHIND, image: 'uni-cafeteria', x: 0, y: -95, w: 960, h: 640 },
     ...TABLE_SPOTS.flatMap(({ cx, floor, k }, i) => cafeSetLayers(`set${i + 1}`, cx, floor, k)),
+    cafeStudyObjects(TABLE_SPOTS[0].cx, TABLE_SPOTS[0].floor, TABLE_SPOTS[0].k),
     cafeTableObjects(TABLE_SPOTS[1].cx, TABLE_SPOTS[1].floor, TABLE_SPOTS[1].k),
   ],
   walkArea: [
@@ -133,6 +134,26 @@ const cafeteria: RoomDef = {
       chair(`chair${n}b`, 'chairRight'),
     ];
     }),
+    {
+      id: 'exercise-sheet',
+      name: 'Matheübungsblatt',
+      rect: TABLE_SPOTS[0].rects.exerciseSheet.rect,
+      walkTo: TABLE_SPOTS[0].rects.table.walkTo,
+      facing: 'up',
+      on: {
+        lookat: 'Ein Matheübungsblatt voller Aufgaben.',
+      },
+    },
+    {
+      id: 'cup',
+      name: 'Tasse',
+      rect: TABLE_SPOTS[0].rects.cup.rect,
+      walkTo: TABLE_SPOTS[0].rects.table.walkTo,
+      facing: 'up',
+      on: {
+        lookat: 'Eine Tasse Kaffee. Der Student kann sie bestimmt gebrauchen.',
+      },
+    },
     {
       id: 'math-book',
       name: 'Mathebuch',

@@ -114,6 +114,22 @@ export function cafeSetLayers(id: string, cx: number, floor: number, k: number):
   ];
 }
 
+export function cafeStudyObjects(cx: number, floor: number, k: number): LayerDef {
+  const art = [
+    inked(poly([[-42, -78], [-12, -78], [-14, -92], [-40, -92]]), '#f7f1df', 1.2),
+    path('M-37 -90L-37 -81M-33 -90L-33 -84M-29 -90L-29 -82M-25 -90L-25 -85', { stroke: '#777d80', sw: 0.8 }),
+    path('M-21 -89L-21 -82M-23 -86L-19 -86', { stroke: '#536984', sw: 0.8 }),
+    ellipse(11, -80, 10, 2.5, { fill: '#3e332a', opacity: 0.25 }),
+    path('M16 -96Q23 -97 23 -91Q23 -86 17 -86', { stroke: INK, sw: 3 }),
+    path('M16 -96Q22 -96 21 -91Q21 -88 17 -88', { stroke: '#e5e3d6', sw: 1.5 }),
+    path('M3 -99L5 -83Q5 -80 11 -80Q17 -80 17 -83L19 -99Z', { fill: '#e9e7da', stroke: INK, sw: 1.5 }),
+    ellipse(11, -99, 8, 2.5, { fill: '#f5f2e7', stroke: INK, sw: 1.2 }),
+    ellipse(11, -99, 5.5, 1.4, { fill: '#71513a' }),
+    path('M6 -95L7 -85', { stroke: '#ffffff', sw: 1, opacity: 0.8 }),
+  ].join('');
+  return part('table1-objects', floor + 1, cx, floor, k, art, [-44, -103, 26, -76]);
+}
+
 export function cafeTableObjects(cx: number, floor: number, k: number): LayerDef {
   const art = [
     group([
@@ -161,6 +177,8 @@ export function cafeSetRects(cx: number, floor: number, k: number) {
   };
   return {
     table: { rect: box(-TABLE_W / 2, TABLE_W / 2, -TABLE_H - TABLE_DEPTH, 2), walkTo: { x: Math.round(cx), y: front } },
+    exerciseSheet: { rect: box(-43, -11, -93, -77) },
+    cup: { rect: box(2, 24, -102, -79) },
     book: { rect: box(-29 + BOOK_SHIFT_X, BOOK_SHIFT_X, -94, -74) },
     bottle: { rect: box(18 + BOTTLE_SHIFT_X, 34 + BOTTLE_SHIFT_X, -111, -79) },
     chairLeft: chairSpot('left'),
