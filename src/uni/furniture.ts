@@ -1,5 +1,5 @@
 import { Layer, type LayerDef } from '../engine/types';
-import { INK, ellipse, group, inked, line, poly } from '../game/art/toon';
+import { INK, ellipse, group, inked, line, path, poly } from '../game/art/toon';
 
 /**
  * Cafeteria furniture: wooden tops, steel tube legs. Everything is drawn in
@@ -22,6 +22,8 @@ const CHAIR_D = 4.5;
 const SEAT_H = 38;
 /** A seated student's hips sit slightly behind the chair's centre. */
 const SIT_BACK = 2;
+const BOOK_SHIFT_X = 42;
+const BOTTLE_SHIFT_X = -43;
 
 /** A steel tube: inked sleeve, steel body, a thin highlight. */
 function tube(a: [number, number], b: [number, number], w = 3.4): string {
@@ -112,6 +114,28 @@ export function cafeSetLayers(id: string, cx: number, floor: number, k: number):
   ];
 }
 
+export function cafeTableObjects(cx: number, floor: number, k: number): LayerDef {
+  const art = [
+    group([
+      inked(poly([[-28, -79], [-1, -79], [-1, -75], [-28, -75]]), '#e6dcc4', 1.5),
+      line([-26, -77], [-3, -77], '#a99d87', 0.8),
+      inked(poly([[-28, -80], [-1, -80], [-4, -93], [-26, -93]]), '#42658a', 1.5),
+      path('M-28 -80L-26 -93L-23 -93L-25 -80Z', { fill: '#29445e', stroke: INK, sw: 0.8 }),
+      path('M-8 -90L-8 -83L-11 -87L-14 -83L-14 -90', { stroke: '#f3e7c8', sw: 1.2 }),
+      line([-18, -89], [-18, -83], '#d7e3dc', 1),
+    ], `translate(${BOOK_SHIFT_X} 0)`),
+    group([
+      ellipse(26, -82, 8, 2.5, { fill: '#3e332a', opacity: 0.25 }),
+      path('M22 -109L22 -103Q19 -101 19 -97L19 -83Q19 -80 22 -80L30 -80Q33 -80 33 -83L33 -97Q33 -101 30 -103L30 -109Z', {
+        fill: '#b8dbd4', stroke: INK, sw: 1.5, opacity: 0.8,
+      }),
+      path('M22 -107L30 -107M22 -98L22 -85', { stroke: '#ecfbf4', sw: 1.3, opacity: 0.9 }),
+      path('M22 -110L30 -110L30 -107L22 -107Z', { fill: '#597a70', stroke: INK, sw: 1 }),
+    ], `translate(${BOTTLE_SHIFT_X} 0)`),
+  ].join('');
+  return part('table2-objects', floor + 1, cx, floor, k, art, [-28, -112, 50, -73]);
+}
+
 /** Where the table and each chair actually appear on screen, for hotspots,
  *  plus where a student stands to use a chair and where they sit. */
 export function cafeSetRects(cx: number, floor: number, k: number) {
@@ -137,6 +161,8 @@ export function cafeSetRects(cx: number, floor: number, k: number) {
   };
   return {
     table: { rect: box(-TABLE_W / 2, TABLE_W / 2, -TABLE_H - TABLE_DEPTH, 2), walkTo: { x: Math.round(cx), y: front } },
+    book: { rect: box(-29 + BOOK_SHIFT_X, BOOK_SHIFT_X, -94, -74) },
+    bottle: { rect: box(18 + BOTTLE_SHIFT_X, 34 + BOTTLE_SHIFT_X, -111, -79) },
     chairLeft: chairSpot('left'),
     chairRight: chairSpot('right'),
   };
