@@ -6,6 +6,7 @@ import { cafeSetHole, cafeSetLayers, cafeSetRects } from './furniture';
 import { lectureHall } from './lecturehall';
 import { DE_STRINGS } from './strings';
 import { STUDENT_POSES, studentDraw } from './student';
+import { exhaustedStudentDraw, teacherDraw, VISITOR_POSES } from './visitors';
 import '@fontsource/fredoka/500.css';
 import '@fontsource/fredoka/700.css';
 
@@ -23,6 +24,11 @@ const TABLE_SPOTS = [
   const k = pxPerCm(t.floor);
   return { ...t, k, rects: cafeSetRects(t.cx, t.floor, k), hole: cafeSetHole(t.cx, t.floor, k) };
 });
+
+const VISITORS = [
+  { id: 'tired-student', ...TABLE_SPOTS[0].rects.chairLeft.seat },
+  { id: 'student-teacher', ...TABLE_SPOTS[1].rects.chairRight.seat },
+];
 
 /** Where each chair stands and where a student sits on it. */
 const CHAIRS: Record<string, { stand: { x: number; y: number }; seat: { x: number; y: number; facing: 'left' | 'right' } }> = {};
@@ -77,6 +83,7 @@ const cafeteria: RoomDef = {
     { x: hole.x0, y: hole.y1 },
   ]),
   scaling: SCALING,
+  actors: VISITORS,
   hotspots: [
     {
       id: 'passage',
@@ -103,7 +110,9 @@ const cafeteria: RoomDef = {
       on: {
         lookat: 'Ein Holzstuhl mit Stahlgestell. Sieht unbequem aus. Ist es wahrscheinlich auch.',
         push: 'Ich sollte die Möbel stehen lassen, wo sie sind.',
-        use: (ctx) => sitDown(ctx, id),
+        use: id === 'chair1a' || id === 'chair2b'
+          ? 'Der Stuhl ist schon besetzt.'
+          : (ctx) => sitDown(ctx, id),
       },
     });
     return [
@@ -123,14 +132,38 @@ const cafeteria: RoomDef = {
       chair(`chair${n}b`, 'chairRight'),
     ];
     }),
+    {
+      id: 'tired-student',
+      name: 'Student',
+      actor: 'tired-student',
+      walkTo: TABLE_SPOTS[0].rects.chairLeft.walkTo,
+      facing: 'up',
+      defaultVerb: 'lookat',
+      on: {
+        lookat: 'Er sieht übermüdet und ziemlich gestresst aus.',
+      },
+    },
+    {
+      id: 'student-teacher',
+      name: 'Tutorin',
+      actor: 'student-teacher',
+      walkTo: TABLE_SPOTS[1].rects.chairRight.walkTo,
+      facing: 'up',
+      defaultVerb: 'lookat',
+      on: {
+        lookat: 'Eine rothaarige Tutorin. Sie wirkt ziemlich von sich überzeugt.',
+      },
+    },
   ],
   entries: {
     start: { x: 470, y: 375, facing: 'down' },
     // Back from the lecture hall, out of the passage.
     passage: { x: 355, y: 330, facing: 'down' },
   },
-  // Whoever walks off a chair stands up first.
-  onWalkStart: standUp,
+  onWalkStart: async (ctx) => {
+    for (const visitor of VISITORS) ctx.face(visitor.id, visitor.facing);
+    await standUp(ctx);
+  },
 };
 
 export const CONTENT: GameContent = {
@@ -148,10 +181,32 @@ export const CONTENT: GameContent = {
       stance: (state) => (state.getFlag(SEAT_FLAG) ? 'sit' : undefined),
       talkStance: (state) => (state.getFlag(SEAT_FLAG) ? 'sittalk' : undefined),
     },
+    'tired-student': {
+      id: 'tired-student',
+      name: 'Student',
+      talkColor: '#f1d8c5',
+      textureSet: 'uni-tired-student',
+      baseScale: 1.8,
+      stance: () => 'sit',
+      talkStance: () => 'sittalk',
+    },
+    'student-teacher': {
+      id: 'student-teacher',
+      name: 'Tutorin',
+      talkColor: '#f3d9bd',
+      textureSet: 'uni-student-teacher',
+      baseScale: 1.8,
+      stance: () => 'sit',
+      talkStance: () => 'sittalk',
+    },
   },
   dialogs: {},
   assets: {
-    svgActors: [{ key: 'uni-student', width: 64, height: 120, poses: STUDENT_POSES, draw: studentDraw }],
+    svgActors: [
+      { key: 'uni-student', width: 64, height: 120, poses: STUDENT_POSES, draw: studentDraw },
+      { key: 'uni-tired-student', width: 64, height: 120, poses: VISITOR_POSES, draw: exhaustedStudentDraw },
+      { key: 'uni-student-teacher', width: 64, height: 120, poses: VISITOR_POSES, draw: teacherDraw },
+    ],
     svgImages: UI_IMAGES,
   },
   theme: UI_THEME,

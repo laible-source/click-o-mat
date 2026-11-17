@@ -15,13 +15,13 @@ const TABLE_DEPTH = 18;
 const TABLE_W = 120;
 const TABLE_H = 75;
 /** How far a chair's centre sits from the table's centre. */
-const CHAIR_DX = 84;
+const CHAIR_DX = 102;
 /** Half the seat's visible depth, and its height: low enough that the
  *  student's cartoon legs reach the floor when sitting. */
 const CHAIR_D = 4.5;
 const SEAT_H = 38;
-/** A seated student leans back against the backrest, off the chair's centre. */
-const SIT_BACK = 8;
+/** A seated student's hips sit slightly behind the chair's centre. */
+const SIT_BACK = 2;
 
 /** A steel tube: inked sleeve, steel body, a thin highlight. */
 function tube(a: [number, number], b: [number, number], w = 3.4): string {

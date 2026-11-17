@@ -54,8 +54,46 @@ check('cafeteria displays the supplied image', await page.evaluate(() => {
     background.displayWidth === 960 && background.displayHeight === 640;
 }));
 check('student starts in the cafeteria', await page.evaluate(() =>
-  window.__engine.state.activeChar === 'student' && window.__engine.roomScene.actors.size === 1));
+  window.__engine.state.activeChar === 'student' && window.__engine.roomScene.actors.size === 3));
+check('two students sit on the outer chairs', await page.evaluate(() => {
+  const scene = window.__engine.roomScene;
+  const placed = new Map(scene.roomDef.actors.map((actor) => [actor.id, actor]));
+  return ['tired-student', 'student-teacher'].every((id) => {
+    const actor = scene.actors.get(id);
+    const position = placed.get(id);
+    return actor && position &&
+      Math.abs(actor.x - position.x) < 1 &&
+      Math.abs(actor.y - position.y) < 1 &&
+      actor.sprite.anims.currentAnim?.key === `${actor.def.textureSet}-sit-side`;
+  });
+}));
+for (const [id, name] of [['tired-student', 'Student'], ['student-teacher', 'Tutorin']]) {
+  const point = await page.evaluate((id) => {
+    const bounds = window.__engine.roomScene.actors.get(id).sprite.getBounds();
+    return { x: bounds.centerX, y: bounds.centerY };
+  }, id);
+  const box = await page.locator('canvas').boundingBox();
+  await page.mouse.move(box.x + point.x / 960 * box.width, box.y + point.y / 600 * box.height);
+  await page.waitForFunction((id) => window.__engine.roomScene.hoverHotspot?.id === id, id);
+  check(`hovering over ${name} identifies them`, await page.evaluate((name) =>
+    window.__engine.roomScene.hoverHotspot.name === name, name));
+}
 await page.screenshot({ path: `${SHOT}/uni-cafeteria.png` });
+
+for (const [id, facing] of [['tired-student', 'right'], ['student-teacher', 'left']]) {
+  const point = await page.evaluate((id) => {
+    const bounds = window.__engine.roomScene.actors.get(id).sprite.getBounds();
+    return { x: bounds.centerX, y: bounds.centerY };
+  }, id);
+  await click(point.x, point.y);
+  await page.waitForFunction((id) => window.__engine.roomScene.actors.get(id).facing === 'down', id, { timeout: 15000 });
+  await page.waitForFunction(() => !window.__engine.busy, null, { timeout: 15000 });
+  await click(480, 420);
+  await page.waitForFunction(([id, facing]) =>
+    window.__engine.roomScene.actors.get(id).facing === facing && !window.__engine.busy,
+  [id, facing], { timeout: 15000 });
+  check(`${id} faces the table again after the player leaves`, true);
+}
 
 await click(540, 410);
 await page.waitForFunction(() => {
@@ -78,10 +116,10 @@ const studentState = () => page.evaluate(() => {
   const s = window.__engine.roomScene.actors.get('student');
   return { seat: window.__engine.state.getFlag('seat'), y: s.y, anim: s.sprite.anims.currentAnim?.key };
 });
-const chair = await chairCentre('chair1a');
+const chair = await chairCentre('chair1b');
 const tableTop = await page.evaluate(() => window.__engine.roomScene.roomDef.hotspots.find((h) => h.id === 'table1').rect.y);
 await click(chair.x, chair.y);
-await page.waitForFunction(() => window.__engine.state.getFlag('seat') === 'chair1a', null, { timeout: 15000 });
+await page.waitForFunction(() => window.__engine.state.getFlag('seat') === 'chair1b', null, { timeout: 15000 });
 await page.waitForTimeout(300);
 let st = await studentState();
 check('using a chair sits the student down', st.anim === 'uni-student-sit-side');
