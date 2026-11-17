@@ -49,7 +49,7 @@ check('cafeteria displays the supplied image', await page.evaluate(() => {
   const scene = window.__engine.roomScene;
   const background = scene.layerObj('background');
   const image = scene.textures.get('uni-cafeteria').getSourceImage();
-  return background.texture.key === 'uni-cafeteria' && image.width === 640 && image.height === 427 &&
+  return background.texture.key === 'uni-cafeteria' && image.width === 1152 && image.height === 768 &&
     background.x === 0 && background.y === -95 &&
     background.displayWidth === 960 && background.displayHeight === 640;
 }));
