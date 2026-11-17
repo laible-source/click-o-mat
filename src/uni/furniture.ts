@@ -1,3 +1,4 @@
+import { Layer, type LayerDef } from '../engine/types';
 import { INK, ellipse, group, inked, line, poly } from '../game/art/toon';
 
 /**
@@ -15,6 +16,12 @@ const TABLE_W = 120;
 const TABLE_H = 75;
 /** How far a chair's centre sits from the table's centre. */
 const CHAIR_DX = 84;
+/** Half the seat's visible depth, and its height: low enough that the
+ *  student's cartoon legs reach the floor when sitting. */
+const CHAIR_D = 4.5;
+const SEAT_H = 38;
+/** A seated student leans back against the backrest, off the chair's centre. */
+const SIT_BACK = 8;
 
 /** A steel tube: inked sleeve, steel body, a thin highlight. */
 function tube(a: [number, number], b: [number, number], w = 3.4): string {
@@ -52,8 +59,8 @@ function table(): string {
 /** A side-on chair facing right (dir 1) or left (dir -1), origin at the
  *  centre of its footprint. */
 function chair(dir: 1 | -1): string {
-  const d = 4.5; // half the seat's visible depth
-  const seatH = 46;
+  const d = CHAIR_D;
+  const seatH = SEAT_H;
   const s: string[] = [];
   const legX = [-17, 17];
   // Far legs, then the near ones in front of them.
@@ -67,24 +74,46 @@ function chair(dir: 1 | -1): string {
   s.push(inked(poly([[-21, -seatH + d], [21, -seatH + d], [21, -seatH + d + 4], [-21, -seatH + d + 4]]), WOOD.edge, 2.2));
   // Backrest: a leaning slab, its top face showing.
   const b = -seatH + d;
-  const top = -88;
+  const top = -seatH - 42;
   s.push(inked(poly([[-21, b], [-16, b], [-21, top + d], [-26, top + d]]), WOOD.edge, 2.2));
   s.push(inked(poly([[-26, top + d], [-21, top + d], [-21, top - d], [-26, top - d]]), WOOD.top, 2.2));
   return group(s, dir === 1 ? undefined : 'scale(-1 1)');
 }
 
-/** A table with a chair on each side. `floor` is the y under the table's
- *  front edge, `k` the px per cm. */
-export function cafeSet(cx: number, floor: number, k: number): string {
-  const p = TABLE_DEPTH;
-  const shadow = ellipse(0, -p / 2, CHAIR_DX + 26, p * 0.8, { fill: '#000000', opacity: 0.28 });
-  const chairs = [-CHAIR_DX, CHAIR_DX].map((x, i) => group(chair(i === 0 ? 1 : -1), `translate(${x} ${-p / 2})`));
-  const body = shadow + chairs[0] + table() + chairs[1];
-  return group(body, `translate(${cx} ${floor}) scale(${k})`);
+type Side = 'left' | 'right';
+const chairX = (side: Side): number => (side === 'left' ? -CHAIR_DX : CHAIR_DX);
+
+/** A layer for art drawn in cm around (cx, floor), `box` = its extent in cm
+ *  relative to that point. */
+function part(id: string, depth: number | LayerDef['depth'], cx: number, floor: number, k: number, art: string, box: [number, number, number, number]): LayerDef {
+  const x = Math.floor(cx + box[0] * k);
+  const y = Math.floor(floor + box[1] * k);
+  const w = Math.ceil((box[2] - box[0]) * k) + 1;
+  const h = Math.ceil((box[3] - box[1]) * k) + 1;
+  return { id, depth, x, y, w, h, svg: group(group(art, `translate(${cx} ${floor}) scale(${k})`), `translate(${-x} ${-y})`) };
 }
 
-/** Where the table and each chair actually appear on screen (the chairs
- *  stand left and right of the table, backrests outwards), for hotspots. */
+/**
+ * The layers of one set: its floor shadow, the table, and a chair on each
+ * side. `floor` is the y under the table's front edge, `k` the px per cm.
+ * Chairs are layers of their own, just behind a seated student (whose feet
+ * stand at `floor - k`) but in front of the room behind them.
+ */
+export function cafeSetLayers(id: string, cx: number, floor: number, k: number): LayerDef[] {
+  const p = TABLE_DEPTH;
+  const shadow = ellipse(0, -p / 2, CHAIR_DX + 26, p * 0.8, { fill: '#000000', opacity: 0.28 });
+  const chairArt = (side: Side) => group(chair(side === 'left' ? 1 : -1), `translate(${chairX(side)} ${-CHAIR_D * 2})`);
+  const chairBox = (side: Side): [number, number, number, number] => [chairX(side) - 30, -CHAIR_D * 2 - SEAT_H - 50, chairX(side) + 30, -CHAIR_D * 2 + 10];
+  return [
+    part(`${id}-shadow`, Layer.BEHIND, cx, floor, k, shadow, [-CHAIR_DX - 28, -p / 2 - p, CHAIR_DX + 28, p / 2]),
+    part(`${id}-table`, floor, cx, floor, k, table(), [-TABLE_W / 2 - 4, -TABLE_H - TABLE_DEPTH - 4, TABLE_W / 2 + 4, 6]),
+    part(`${id}-chair-left`, floor - 6 * k, cx, floor, k, chairArt('left'), chairBox('left')),
+    part(`${id}-chair-right`, floor - 6 * k, cx, floor, k, chairArt('right'), chairBox('right')),
+  ];
+}
+
+/** Where the table and each chair actually appear on screen, for hotspots,
+ *  plus where a student stands to use a chair and where they sit. */
 export function cafeSetRects(cx: number, floor: number, k: number) {
   const box = (x0: number, x1: number, y0: number, y1: number) => ({
     x: Math.round(cx + x0 * k),
@@ -93,22 +122,28 @@ export function cafeSetRects(cx: number, floor: number, k: number) {
     h: Math.round((y1 - y0) * k),
   });
   const front = Math.round(floor + 14 * k);
+  const chairRect = (side: Side) => {
+    const x = chairX(side);
+    const top = -CHAIR_D * 2 - SEAT_H - 42 - CHAIR_D;
+    return side === 'left' ? box(x - 26, x + 22, top, -3) : box(x - 22, x + 26, top, -3);
+  };
+  const chairSpot = (side: Side) => {
+    const dir = side === 'left' ? 1 : -1; // the way a student on it looks
+    return {
+      rect: chairRect(side),
+      walkTo: { x: Math.round(cx + chairX(side) * k), y: front },
+      seat: { x: Math.round(cx + (chairX(side) - dir * SIT_BACK) * k), y: Math.round(floor - k), facing: (dir === 1 ? 'right' : 'left') as 'left' | 'right' },
+    };
+  };
   return {
     table: { rect: box(-TABLE_W / 2, TABLE_W / 2, -TABLE_H - TABLE_DEPTH, 2), walkTo: { x: Math.round(cx), y: front } },
-    chairLeft: { rect: box(-CHAIR_DX - 26, -CHAIR_DX + 22, -102, -3), walkTo: { x: Math.round(cx - CHAIR_DX * k), y: front } },
-    chairRight: { rect: box(CHAIR_DX - 22, CHAIR_DX + 26, -102, -3), walkTo: { x: Math.round(cx + CHAIR_DX * k), y: front } },
+    chairLeft: chairSpot('left'),
+    chairRight: chairSpot('right'),
   };
 }
 
-/** The bounding box of a set, for its layer and its walk-area hole. */
-export function cafeSetBounds(cx: number, floor: number, k: number) {
-  const halfW = (CHAIR_DX + 30) * k;
-  return {
-    x: Math.floor(cx - halfW),
-    y: Math.floor(floor - (TABLE_H + TABLE_DEPTH + 12) * k),
-    w: Math.ceil(halfW * 2),
-    h: Math.ceil((TABLE_H + TABLE_DEPTH + 18) * k),
-    /** Floor footprint: depth under the table, widened by a margin. */
-    hole: { x0: cx - halfW + 8 * k, x1: cx + halfW - 8 * k, y0: floor - (TABLE_DEPTH + 6) * k, y1: floor + 2 },
-  };
+/** The floor footprint a walking student must not enter. */
+export function cafeSetHole(cx: number, floor: number, k: number) {
+  const halfW = (CHAIR_DX + 24) * k;
+  return { x0: cx - halfW, x1: cx + halfW, y0: floor - (TABLE_DEPTH + 6) * k, y1: floor + 2 };
 }

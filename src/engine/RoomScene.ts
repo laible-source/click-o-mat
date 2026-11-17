@@ -752,14 +752,22 @@ export class RoomScene extends Phaser.Scene {
     return this.actors.get(engine.state.activeChar);
   }
 
+  /** Run the room's onWalkStart hook (stand up, ...) before the player walks. */
+  private async beforePlayerWalk(): Promise<void> {
+    const hook = this.roomDef.onWalkStart;
+    if (hook && !engine.skipping) await hook(engine.makeContext());
+  }
+
   /** Plain interruptible walk (no verb). */
   private async walkPlayer(target: Vec2): Promise<void> {
     const player = this.player;
     if (!player) return;
     const seq = ++this.interactionSeq;
     engine.beginBusy();
-    engine.interruptible = true;
     try {
+      await this.beforePlayerWalk();
+      if (seq !== this.interactionSeq) return;
+      engine.interruptible = true;
       await player.walkTo(target, this.walkArea);
     } finally {
       engine.endBusy(); // always pairs with our own beginBusy
@@ -786,6 +794,8 @@ export class RoomScene extends Phaser.Scene {
       }
 
       if (walkTarget) {
+        await this.beforePlayerWalk();
+        if (seq !== this.interactionSeq) return;
         engine.interruptible = true;
         const result = await player.walkTo(walkTarget, this.walkArea);
         if (seq !== this.interactionSeq) return; // superseded by a newer click

@@ -613,7 +613,9 @@ Only *player-driven* movement fires regions: script-driven walks, spawning
 inside one, and cutscene fast-forwards update containment silently.
 `RoomDef.onExit` complements `onEnter` for leaving a room (bookkeeping and
 parting lines; gate exits in the door script instead — onExit isn't
-cancellable).
+cancellable). `RoomDef.onWalkStart` runs (and is awaited) when the player is
+about to walk off on their own — a floor click or a hotspot approach — so a
+room can have them stand up from a chair first (the UNI cafeteria does).
 
 **Cutscene skipping** needs nothing from your scripts. Esc fast-forwards
 whatever is running: showing and future lines dismiss instantly, `ctx.wait`
@@ -782,6 +784,11 @@ seated or sleeping pose — registered the same way. Two ways to use them:
 // (re-evaluated on ctx.repaint(), so it survives save/load).
 cop: { id: 'cop', name: 'Partykiller', textureSet: 'cop', talkColor: '#9be89b',
        stance: (state) => (state.getFlag('copAsleep') ? 'sleep' : undefined) },
+
+// A stance only replaces idle. For an actor that should keep its pose while
+// speaking (someone sitting), add `talkStance` — it replaces the talk pose:
+student: { /* … */ stance: (s) => (s.getFlag('seat') ? 'sit' : undefined),
+                   talkStance: (s) => (s.getFlag('seat') ? 'sittalk' : undefined) },
 
 // Transient staging in a cutscene: hold a pose for a while (Esc-skippable).
 await ctx.animate('cop', 'traffic', 3200);

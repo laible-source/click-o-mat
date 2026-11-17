@@ -94,6 +94,10 @@ export interface ActorDef {
    *  of an SvgActorAsset) replaces idle — someone dozing off, sitting down,
    *  holding something. Re-evaluated on ctx.repaint(). */
   stance?: (state: GameState) => string | undefined;
+  /** Like `stance`, but replaces the talk pose while the actor speaks — a
+   *  seated actor should keep sitting while talking (needs a matching custom
+   *  pose with a moving mouth). */
+  talkStance?: (state: GameState) => string | undefined;
 }
 
 export interface RoomActorPlacement {
@@ -216,6 +220,10 @@ export interface RoomDef {
   /** Runs (and is awaited) just before leaving via goToRoom — bookkeeping,
    *  parting lines. Not cancellable; gate exits in the door script instead. */
   onExit?: Script;
+  /** Runs (and is awaited) when the player is about to walk somewhere on
+   *  their own — a click on the floor or on a hotspot — before the walk
+   *  starts: stand up from a chair, put something down. Keep it short. */
+  onWalkStart?: Script;
 }
 
 /** A recurring, non-blocking background event in a room. */

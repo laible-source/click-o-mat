@@ -57,10 +57,10 @@ check('student starts in the cafeteria', await page.evaluate(() =>
   window.__engine.state.activeChar === 'student' && window.__engine.roomScene.actors.size === 1));
 await page.screenshot({ path: `${SHOT}/uni-cafeteria.png` });
 
-await click(720, 390);
+await click(540, 410);
 await page.waitForFunction(() => {
   const student = window.__engine.roomScene.actors.get('student');
-  return Math.abs(student.x - 720) < 3 && Math.abs(student.y - 390) < 3;
+  return Math.abs(student.x - 540) < 3 && Math.abs(student.y - 410) < 3;
 }, null, { timeout: 10000 });
 check('clicking the floor walks the student right', true);
 await click(350, 325);
@@ -69,6 +69,43 @@ await page.waitForFunction(() => {
   return Math.abs(student.x - 350) < 3 && Math.abs(student.y - 325) < 3;
 }, null, { timeout: 10000 });
 check('student can walk in another direction', true);
+
+const chairCentre = (id) => page.evaluate((id) => {
+  const r = window.__engine.roomScene.roomDef.hotspots.find((h) => h.id === id).rect;
+  return { x: r.x + r.w / 2, y: r.y + r.h / 2 };
+}, id);
+const studentState = () => page.evaluate(() => {
+  const s = window.__engine.roomScene.actors.get('student');
+  return { seat: window.__engine.state.getFlag('seat'), y: s.y, anim: s.sprite.anims.currentAnim?.key };
+});
+const chair = await chairCentre('chair1a');
+const tableTop = await page.evaluate(() => window.__engine.roomScene.roomDef.hotspots.find((h) => h.id === 'table1').rect.y);
+await click(chair.x, chair.y);
+await page.waitForFunction(() => window.__engine.state.getFlag('seat') === 'chair1a', null, { timeout: 15000 });
+await page.waitForTimeout(300);
+let st = await studentState();
+check('using a chair sits the student down', st.anim === 'uni-student-sit-side');
+check('the student sits on the chair, not on the floor in front of it', st.y < tableTop + 120);
+await page.evaluate(() => void window.__engine.makeContext().playerSay('Hallo.'));
+await page.waitForTimeout(300);
+check('a seated student keeps sitting while talking', (await studentState()).anim === 'uni-student-sittalk-side');
+await page.screenshot({ path: `${SHOT}/uni-seated.png` });
+await click(480, 420);
+await page.waitForFunction(() => {
+  const s = window.__engine.roomScene.actors.get('student');
+  return !window.__engine.state.getFlag('seat') && Math.abs(s.x - 480) < 3 && Math.abs(s.y - 420) < 3;
+}, null, { timeout: 15000 });
+check('walking away stands the student up first', true);
+
+await click(290, 200);
+await page.waitForFunction(() => window.__engine.state.currentRoom === 'lecturehall' && !!window.__engine.roomScene?.actors.get('student'), null, { timeout: 15000 });
+await page.waitForTimeout(1000);
+check('the passage next to the vending machines leads to the lecture hall', await page.evaluate(() =>
+  window.__engine.roomScene.layerObj('background').texture.key === 'uni-lecture-hall'));
+await page.screenshot({ path: `${SHOT}/uni-lecture-hall.png` });
+await click(605, 40);
+await page.waitForFunction(() => window.__engine.state.currentRoom === 'cafeteria', null, { timeout: 15000 });
+check('the rear door leads back to the cafeteria', true);
 check('UNI saves in its own namespace', await page.evaluate(() =>
   window.__engine.save(0) && !!localStorage.getItem('pnc-save-uni-0') && !localStorage.getItem('pnc-save-0')));
 

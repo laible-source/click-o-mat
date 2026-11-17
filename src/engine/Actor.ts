@@ -90,9 +90,11 @@ export class Actor {
   private applyPose(): void {
     const { name, flip } = this.variant();
     this.sprite.setFlipX(flip);
-    // A scripted pose beats everything; a state-driven stance replaces idle.
-    const pose =
-      this.override ?? (this.pose === 'idle' ? (this.def.stance?.(engine.state) ?? 'idle') : this.pose);
+    // A scripted pose beats everything; a state-driven stance replaces idle
+    // (and talkStance replaces talk).
+    const stance =
+      this.pose === 'idle' ? this.def.stance?.(engine.state) : this.pose === 'talk' ? this.def.talkStance?.(engine.state) : undefined;
+    const pose = this.override ?? stance ?? this.pose;
     const animKey = `${this.def.textureSet}-${pose}-${name}`;
     if (this.scene.anims.exists(animKey)) {
       this.sprite.play(animKey, true);
