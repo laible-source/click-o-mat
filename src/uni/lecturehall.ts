@@ -1,4 +1,6 @@
 import { Layer, type HotspotDef, type RoomDef, type Vec2 } from '../engine/types';
+import { POSES } from '../game/art/characters';
+import { professorDraw } from './professor';
 
 // The lecture hall, from the supplied 1024×768 picture. It is shown 960 px
 // wide and cropped to the bottom of the picture (ceiling lights and balcony
@@ -11,6 +13,7 @@ const SHIFT_Y = -270;
 const S = (x: number, y: number): Vec2 => ({ x: Math.round(x * K), y: Math.round(y * K + SHIFT_Y) });
 
 const SCALING = { yTop: 277, scaleTop: 0.5, yBottom: 450, scaleBottom: 0.85 };
+const PROFESSOR_POSITION = S(570, 690);
 const EXIT_TOP_LEFT = S(620, 300);
 const EXIT_BOTTOM_RIGHT = S(670, 360);
 
@@ -34,7 +37,10 @@ const exit: HotspotDef = {
 export const lectureHall: RoomDef = {
   id: 'lecturehall',
   name: 'Hörsaal',
-  assets: { images: [{ key: IMG.key, url: `${import.meta.env.BASE_URL}img/uni-lecture-hall.png` }] },
+  assets: {
+    images: [{ key: IMG.key, url: `${import.meta.env.BASE_URL}img/uni-lecture-hall.png` }],
+    svgActors: [{ key: 'uni-professor', width: 64, height: 120, poses: POSES, draw: professorDraw }],
+  },
   layers: [{ id: 'background', depth: Layer.BEHIND, image: IMG.key, x: 0, y: SHIFT_Y, w: Math.round(IMG.w * K), h: Math.round(IMG.h * K) }],
   // The floor in front of the first row, round the lectern at the bottom left.
   walkArea: [
@@ -52,6 +58,22 @@ export const lectureHall: RoomDef = {
     S(170, 620),
   ],
   scaling: SCALING,
-  hotspots: [exit],
+  actors: [{ id: 'otto-e', ...PROFESSOR_POSITION, facing: 'down' }],
+  hotspots: [
+    exit,
+    {
+      id: 'otto-e',
+      name: 'Otto E.',
+      actor: 'otto-e',
+      walkTo: S(635, 730),
+      facing: 'up',
+      defaultVerb: 'talkto',
+      on: {
+        lookat: 'Das ist Professor Otto E.',
+        talkto: (ctx) => ctx.say('otto-e', 'Guten Tag! Schön, dass Sie da sind.'),
+      },
+    },
+  ],
   entries: { passage: { ...S(205, 610), facing: 'right' } },
+  onWalkStart: async (ctx) => { ctx.face('otto-e', 'down'); },
 };

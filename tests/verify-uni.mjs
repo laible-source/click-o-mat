@@ -140,6 +140,26 @@ await page.waitForFunction(() => window.__engine.state.currentRoom === 'lectureh
 await page.waitForTimeout(1000);
 check('the passage next to the vending machines leads to the lecture hall', await page.evaluate(() =>
   window.__engine.roomScene.layerObj('background').texture.key === 'uni-lecture-hall'));
+const professor = await page.evaluate(() => {
+  const actor = window.__engine.roomScene.actors.get('otto-e');
+  if (!actor) return null;
+  const bounds = actor.sprite.getBounds();
+  return { x: bounds.centerX, y: bounds.centerY };
+});
+check('Otto E. is in the lecture hall', !!professor);
+if (professor) {
+  const box = await page.locator('canvas').boundingBox();
+  await page.mouse.move(box.x + professor.x / 960 * box.width, box.y + professor.y / 600 * box.height);
+  await page.waitForFunction(() => window.__engine.roomScene.hoverHotspot?.id === 'otto-e');
+  check('hovering over Otto E. identifies him', true);
+  await click(professor.x, professor.y);
+  await page.waitForFunction(() => window.__engine.roomScene.actors.get('otto-e').speech?.text.includes('Guten Tag'), null, { timeout: 15000 });
+  check('Otto E. greets the player', true);
+  await page.waitForFunction(() => !window.__engine.busy, null, { timeout: 15000 });
+  await click(700, 430);
+  await page.waitForFunction(() => window.__engine.roomScene.actors.get('otto-e').facing === 'down' && !window.__engine.busy, null, { timeout: 15000 });
+  check('Otto E. faces forward again when the player leaves', true);
+}
 await page.screenshot({ path: `${SHOT}/uni-lecture-hall.png` });
 await click(605, 40);
 await page.waitForFunction(() => window.__engine.state.currentRoom === 'cafeteria', null, { timeout: 15000 });

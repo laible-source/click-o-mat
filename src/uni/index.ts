@@ -241,6 +241,13 @@ export const CONTENT: GameContent = {
       stance: () => 'sit',
       talkStance: () => 'sittalk',
     },
+    'otto-e': {
+      id: 'otto-e',
+      name: 'Otto E.',
+      talkColor: '#f1e7d4',
+      textureSet: 'uni-professor',
+      baseScale: 1.8,
+    },
   },
   dialogs: {},
   assets: {
